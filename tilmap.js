@@ -846,7 +846,7 @@ tilmap.canvasAlign = function () {
 }
 
 tilmap.homeUI = function () {
-    var h = '<h3 style="color:maroon"> Tumor Infitrating Lynphocytes (TILs)</h3>'
+    var h = '<h3 style="color:maroon"> Tumor Infitrating Lymphocytes (TILs)</h3>'
     h += '<p style="color:navy">'
     h += 'Tumor formation requires evading the surveillance of the patient\'s own immune system.'
     h += ' As such, the visualization of the immune response mediated by Lymphocytes has an important prognostic value for the understanding and treatment of cancer.'
