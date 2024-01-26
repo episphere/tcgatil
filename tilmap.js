@@ -728,8 +728,8 @@ tilmap.calcTILfun = function () {
         }
         console.log('cvTops', document.querySelectorAll('#cvTop').length)
         loading.hidden = true
-        continueTool.style.backgroundColor = "yellow"
-        continueTool.style.color = "red"
+        // continueTool.style.backgroundColor = "yellow"
+        // continueTool.style.color = "red"
     }
     segmentationRange.onchange = tilmap.segment //rangeSegmentBt.onclick
     transparencyRange.onchange = tilmap.transpire
@@ -846,35 +846,35 @@ tilmap.canvasAlign = function () {
 }
 
 tilmap.homeUI = function () {
-    var h = '<h3 style="color:maroon"> Tumor Infitrating Lymphocytes (TILs)</h3>'
-    h += '<p style="color:navy">'
-    h += 'Tumor formation requires evading the surveillance of the patient\'s own immune system.'
-    h += ' As such, the visualization of the immune response mediated by Lymphocytes has an important prognostic value for the understanding and treatment of cancer.'
-    h += ' To that end, large collaboratory initiatives like <a href="https://www.tilsinbreastcancer.org" style="background-color:yellow" target="_blank">tilsinbreastcancer.org</a> bring together distributed efforts to analyse and classify histopathology slides, each with up to a million individual cells.'
-    h += '</p>'
-    h += '<h3 style="color:maroon"> Deep Learning (AI)</h3>'
-    h += '<p style="color:navy;font-family:Arial;font-size:16px">'
-    h += '<i>Deep Learning</i>, an Artificial Intelligence (AI) technique, was used here to scale and automate the laborious TIL and cancer cell classification by Pathologists.'
-    h += ' This web-based tool provides an interface with tissue images synthesized from the AI predictions, which can be interactivelly mapped to the raw images they classify.'
-    h += ' The result is a collection of 1015 breast cancer whole slide images and their respective synthetic AI maps.'
-    h += ' The slide images come from the public <a href="https://www.cancer.gov/about-nci/organization/ccg/research/structural-genomics/tcga" style="background-color:yellow" target="_blank">The Cancer Genome Atlas</a> (TCGA), and the AI calssification image maps are similarly made publicly available with this tool.'
-    h += ' To use the interactive tool where AI classifications are mapped to whole slides of breast tumors <button id="continueTool" style="background-color:silver;color:gray;font-size:large;vertical-align:top;border-radius:15px">Click to see TIL/tumor maps</button>'
-    h += '</p>'
-    h += '<hr>'
-    h += '<p style="font-size:small">'
-    h += 'For more information and methodological detail see published manuscript:'
-    h += '</p>'
-    h += '<p style="font-size:small">'
-    h += '<i>Han Le, Rajarsi Gupta, Le Hou, Shahira Abousamra, Danielle Fassler, Tahsin Kurc, Dimitris Samaras, Rebecca Batiste, Tianhao Zhao, Alison L. Van Dyke, Ashish Sharma, Erich Bremer, Jonas S Almeida, Joel Saltz (2020) <b>Utilizing Automated Breast Cancer Detection to Identify Spatial Distributions of Tumor Infiltrating Lymphocytes in Invasive Breast Cancer</b>. Am J. Pathol. (20)30188-7. [<a href="https://pubmed.ncbi.nlm.nih.gov/32277893" target="_blank" style="background-color:yellow">PMID:32277893</a>].'
-    h += '</p>'
-    tilmap.homeDiv = document.getElementById('tilmapHome')
-    tilmap.homeDiv.innerHTML = h
-    tilmap.homeDiv.style.fontFamily = "Arial"
-    continueTool.onclick = function () {
-        tilmap.div.hidden = false
-        tilmap.homeDiv.hidden = true
-        setTimeout(tilmap.canvasAlign, 100)
-    }
+    // var h = '<h3 style="color:maroon"> Tumor Infitrating Lymphocytes (TILs)</h3>'
+    // h += '<p style="color:navy">'
+    // h += 'Tumor formation requires evading the surveillance of the patient\'s own immune system.'
+    // h += ' As such, the visualization of the immune response mediated by Lymphocytes has an important prognostic value for the understanding and treatment of cancer.'
+    // h += ' To that end, large collaboratory initiatives like <a href="https://www.tilsinbreastcancer.org" style="background-color:yellow" target="_blank">tilsinbreastcancer.org</a> bring together distributed efforts to analyse and classify histopathology slides, each with up to a million individual cells.'
+    // h += '</p>'
+    // h += '<h3 style="color:maroon"> Deep Learning (AI)</h3>'
+    // h += '<p style="color:navy;font-family:Arial;font-size:16px">'
+    // h += '<i>Deep Learning</i>, an Artificial Intelligence (AI) technique, was used here to scale and automate the laborious TIL and cancer cell classification by Pathologists.'
+    // h += ' This web-based tool provides an interface with tissue images synthesized from the AI predictions, which can be interactivelly mapped to the raw images they classify.'
+    // h += ' The result is a collection of 1015 breast cancer whole slide images and their respective synthetic AI maps.'
+    // h += ' The slide images come from the public <a href="https://www.cancer.gov/about-nci/organization/ccg/research/structural-genomics/tcga" style="background-color:yellow" target="_blank">The Cancer Genome Atlas</a> (TCGA), and the AI calssification image maps are similarly made publicly available with this tool.'
+    // h += ' To use the interactive tool where AI classifications are mapped to whole slides of breast tumors <button id="continueTool" style="background-color:silver;color:gray;font-size:large;vertical-align:top;border-radius:15px">Click to see TIL/tumor maps</button>'
+    // h += '</p>'
+    // h += '<hr>'
+    // h += '<p style="font-size:small">'
+    // h += 'For more information and methodological detail see published manuscript:'
+    // h += '</p>'
+    // h += '<p style="font-size:small">'
+    // h += '<i>Han Le, Rajarsi Gupta, Le Hou, Shahira Abousamra, Danielle Fassler, Tahsin Kurc, Dimitris Samaras, Rebecca Batiste, Tianhao Zhao, Alison L. Van Dyke, Ashish Sharma, Erich Bremer, Jonas S Almeida, Joel Saltz (2020) <b>Utilizing Automated Breast Cancer Detection to Identify Spatial Distributions of Tumor Infiltrating Lymphocytes in Invasive Breast Cancer</b>. Am J. Pathol. (20)30188-7. [<a href="https://pubmed.ncbi.nlm.nih.gov/32277893" target="_blank" style="background-color:yellow">PMID:32277893</a>].'
+    // h += '</p>'
+    // tilmap.homeDiv = document.getElementById('tilmapHome')
+    // tilmap.homeDiv.innerHTML = h
+    // tilmap.homeDiv.style.fontFamily = "Arial"
+    // continueTool.onclick = function () {
+    tilmap.div.hidden = false
+    //     tilmap.homeDiv.hidden = true
+    //     setTimeout(tilmap.canvasAlign, 100)
+    // }
 }
 
 
