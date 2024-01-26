@@ -9,8 +9,7 @@ tilmap = function () {
         tilmap.ui()
         // make sure first image is onloaded
         function firstLoad() {
-            if (!document.getElementById('calcTILblue')) {
-                console.log('1st Load at ' + Date())
+            if (!tilmap.img) {
                 setTimeout(firstLoad, 1000)
             } else {
                 tilmap.img.onload()
@@ -64,26 +63,27 @@ tilmap.ui = function (div) {
     tilmap.tilShowImgDiv = div.querySelector('#tilShowImgDiv')
     tilmap.selTumorType.style.backgroundColor = 'lime'
     tilmap.selTumorTissue.style.backgroundColor = 'orange'
-    tilmap.getJSON().then(x => {
+
+    const PNGS_basePath = "https://mathbiol.github.io/tilmap"
+    const jsonURL = "dir.json" // To call in all the images, instead of just the BRCA ones that TCGA-TIL originally had.
+    tilmap.getJSON(`${PNGS_basePath}/${jsonURL}`).then(x => {
         tilmap.index(x) // build TissueIndex
         for (var t in tilmap.tumorIndex) {
             var op = document.createElement('option')
             tilmap.selTumorType.appendChild(op)
             op.textContent = t
-
-
-            //debugger
         }
         tilmap.optTissue()
-        tilmap.showTIL()
+        tilmap.showTIL(PNGS_basePath)
     })
+    
     tilmap.selTumorType.onchange = () => { // update tissue list
         tilmap.optTissue();
-        tilmap.showTIL()
+        tilmap.showTIL(PNGS_basePath)
     }
     tilmap.selTumorTissue.onchange= () => {
         tilmap.viewer?.close()
-        tilmap.showTIL()
+        tilmap.showTIL(PNGS_basePath)
     }
     tilmap.selTumorType.onclick = tilmap.selTumorTissue.onclick = function () {
         if (cancerRangePlay.style.backgroundColor == "orange") {
@@ -92,8 +92,6 @@ tilmap.ui = function (div) {
         if (tilRangePlay.style.backgroundColor == "orange") {
             tilRangePlay.click()
         }
-
-        //debugger
     }
 
     //setTimeout(tilmap.showTIL,3000)
@@ -187,7 +185,7 @@ tilmap.optTissue = function () { // fill Tissues once type is chosen
 }
 
 tilmap.getJSON = async function (url) {
-    url = url || 'dir.json'
+    url = url || '`dir.json'
     return (await fetch(url)).json()
 }
 
@@ -256,9 +254,26 @@ tilmap.progressBar = (show = true) => {
 
 }
 
+tilmap.corsDisallowsCacheControlHeaders = false
 tilmap.createTileSource = async (url) => {
     // Create a tile source for the image.
-    let tiffTileSources = await OpenSeadragon.GeoTIFFTileSource.getAllTileSources(url, { logLatency: true, cache: true });
+    let cacheTiles = true
+    if (!tilmap.corsDisallowsCacheControlHeaders) {
+        // Chrome slows down tile loading when Cache-Control is not explictly set to no-cache.
+        // Try adding the header, if it causes a CORS error, remove and retry fetching.
+        cacheTiles = typeof(window.chrome) === "undefined"
+    }
+    
+    let tiffTileSources = undefined
+    try {
+        tiffTileSources = await OpenSeadragon.GeoTIFFTileSource.getAllTileSources(url, { logLatency: false, cache: cacheTiles });
+        tilmap.corsAllowsCacheControl = true
+    } catch (e) {
+        console.log("ERROR OCCURRED")
+        console.warn(e)
+        tilmap.corsDisallowsCacheControlHeaders = true
+        tiffTileSources = await tilmap.createTileSource(url)
+    }
     // tiffTileSources.then(ts=>viewer.open(ts));
 
     // const imageURLForSW = `${tilmap.tileServerBasePath}/${encodeURIComponent(url)}`
@@ -337,9 +352,10 @@ const utils = {
     roundToPrecision: (value, precision) => Math.round((parseFloat(value) + Number.EPSILON) * 10 ** precision) / 10 ** precision
 }
 
-tilmap.showTIL = async () => { // get image and display it
-    var url = 'PNGs/' + tilmap.selTumorType.value + '/' + tilmap.selTumorTissue.value
-    var h = '<div id="imgTILDiv"><img id="imgTIL"></div><div><a href="' + url + '" target="_blank" style="font-size:small">' + url + '</a></div><div id="calcTIL">...</div>'
+tilmap.showTIL = async (basePath, tcgaImageName) => { // get image and display it
+    const imagePath = 'PNGs/' + tilmap.selTumorType.value + '/' + tilmap.selTumorTissue.value
+    var url = `${basePath}/${imagePath}`
+    var h = '<div id="imgTILDiv"><img id="imgTIL" crossorigin="anonymous"></div><div><a href="' + url + '" target="_blank" style="font-size:small">' + url + '</a></div><div id="calcTIL">...</div>'
     tilmap.tilShowImgDiv.innerHTML = h
     var h2 = ''
     h2 += '<div id="calcTILdiv">CaMicroscope</div>'
@@ -377,7 +393,7 @@ tilmap.showTIL = async () => { // get image and display it
         const tcgaImageId = files.find(file => file.file_name.includes(slideSubmitterId))?.id
         return `https://api.gdc.cancer.gov/data/${tcgaImageId}`
     }
-    let url2 = await getURLFromTCGA(tilmap.selTumorTissue.value)
+    let url2 = await getURLFromTCGA(tcgaImageName || tilmap.selTumorTissue.value)
 
     tilmap.default = {
         "tileSourceOptions": {
@@ -471,17 +487,17 @@ tilmap.calcTILfun = function () {
     //var h=' Decode RGB maps:'
     var h = ''
     //h += '<p><span id="hideRGBbuttons" style="color:blue;cursor:hand;font-size:small">RGB[+] </span>'
-    h += '<p> '
-    h += '<span id="hideRGBbuttons" style="color:blue;cursor:hand;font-size:small">RGB[+] </span>'
-    h += '<span id="rgbButtons" hidden=true>'
-    h += '<button id="calcTILred" style="background-color:silver"> Lymph prob. </button> '
-    h += '<span> <button id="calcTILgreen" style="background-color:silver"> Cancer prob. </button></span> '
-    //h += '<span> </span> '
-    //h += '<span> <button id="calcTILclass" style="background-color:silver"> Classification </button></span> '
-    h += '<button id="calcTIL0" style="background-color:white"> original png </button> <span id="tileSize" style="font-size:small"></span>'
-    h += '</span> '
-    h += '<button id="calcTILblue" style="background-color:silver;color:black;font-weight:bold"> Classification </button>&nbsp;<span style="font-size:small;background-color:gray;color:white">&nbsp;T&nbsp;</span><span style="font-size:small;background-color:yellow;color:black">&nbsp;C&nbsp;</span><span style="font-size:small;background-color:red;color:black">&nbsp;L&nbsp;</span>'
-    h += '</p>'
+    // h += '<p> '
+    // h += '<span id="hideRGBbuttons" style="color:blue;cursor:hand;font-size:small">RGB[+] </span>'
+    // h += '<span id="rgbButtons" hidden=true>'
+    // h += '<button id="calcTILred" style="background-color:silver"> Lymph prob. </button> '
+    // h += '<span> <button id="calcTILgreen" style="background-color:silver"> Cancer prob. </button></span> '
+    // //h += '<span> </span> '
+    // //h += '<span> <button id="calcTILclass" style="background-color:silver"> Classification </button></span> '
+    // h += '<button id="calcTIL0" style="background-color:white"> original png </button> <span id="tileSize" style="font-size:small"></span>'
+    // h += '</span> '
+    // h += '<button id="calcTILblue" style="background-color:silver;color:black;font-weight:bold"> Classification </button>&nbsp;<span style="font-size:small;background-color:gray;color:white">&nbsp;T&nbsp;</span><span style="font-size:small;background-color:yellow;color:black">&nbsp;C&nbsp;</span><span style="font-size:small;background-color:red;color:black">&nbsp;L&nbsp;</span>'
+    // h += '</p>'
     h += '<span id="hideRanges" style="color:blue;cursor:hand;font-size:small">Advanced[+] </span>'
 
     h += '<span id="advancedRanges" hidden=false>'
@@ -498,18 +514,18 @@ tilmap.calcTILfun = function () {
     tilmap.calcTILdiv.innerHTML = h
     segVal.innerText = segmentationRange.value
     transVal.innerText = transparencyRange.value
-    hideRGBbuttons.onclick = function () {
-        if (rgbButtons.hidden) {
-            rgbButtons.hidden = false
-            hideRGBbuttons.textContent = 'RGB[-] '
-            hideRGBbuttons.style.color = "maroon"
-        } else {
-            rgbButtons.hidden = true
-            hideRGBbuttons.textContent = 'RGB[+] '
-            hideRGBbuttons.style.color = "blue"
-        }
-        tilmap.canvasAlign()
-    }
+    // hideRGBbuttons.onclick = function () {
+    //     if (rgbButtons.hidden) {
+    //         rgbButtons.hidden = false
+    //         hideRGBbuttons.textContent = 'RGB[-] '
+    //         hideRGBbuttons.style.color = "maroon"
+    //     } else {
+    //         rgbButtons.hidden = true
+    //         hideRGBbuttons.textContent = 'RGB[+] '
+    //         hideRGBbuttons.style.color = "blue"
+    //     }
+    //     tilmap.canvasAlign()
+    // }
     hideRanges.onclick = function () {
         if (advancedRanges.hidden) {
             advancedRanges.hidden = false
@@ -524,11 +540,11 @@ tilmap.calcTILfun = function () {
                         rangeSegmentBt.click()
                         setTimeout(_ => {
                             rangeSegmentBt.style.backgroundColor = 'lime'
-                            calcTILblue.style.backgroundColor = 'cyan'
-                            setTimeout(_ => {
-                                calcTILblue.click()
-                                calcTILblue.style.backgroundColor = 'silver'
-                            }, 500)
+                            // calcTILblue.style.backgroundColor = 'cyan'
+                            // setTimeout(_ => {
+                            //     calcTILblue.click()
+                            //     calcTILblue.style.backgroundColor = 'silver'
+                            // }, 500)
                         }, 2000)
                     }, 500)
 
@@ -589,11 +605,13 @@ tilmap.calcTILfun = function () {
         tilmap.cvBase.hidden = true
         tilmap.cvBase.width = tilmap.img.width
         tilmap.cvBase.height = tilmap.img.height
-        tileSize.textContent = `${tilmap.img.width}x${tilmap.img.height}`
+        // tileSize.textContent = `${tilmap.img.width}x${tilmap.img.height}`
         tilmap.cvBase.id = "cvBase"
         tilmap.img.parentElement.appendChild(tilmap.cvBase)
         tilmap.ctx = tilmap.cvBase.getContext('2d');
         tilmap.ctx.drawImage(this, 0, 0);
+        tilmap.cvBase.hidden = false
+        tilmap.img.hidden = true
         tilmap.imgData = jmat.imread(tilmap.cvBase);
         // extract RGB
         tilmap.imgDataR = tilmap.imSlice(0)
@@ -601,53 +619,53 @@ tilmap.calcTILfun = function () {
         tilmap.imgDataB = tilmap.imSlice(2)
         //tilmap.imgDataB_count=tilmap.imgDataB.map(x=>x.map(x=>x/255)).map(x=>x.reduce((a,b)=>a+b)).reduce((a,b)=>a+b)
         tilmap.imgDataB_count = tilmap.imgDataB.map(x => x.map(x => (x > 0))).map(x => x.reduce((a, b) => a + b)).reduce((a, b) => a + b)
-        calcTILred.onclick = function () { tilmap.from2D(tilmap.imSlice(0)) }
-        calcTILgreen.onclick = function () { tilmap.from2D(tilmap.imSlice(1)) }
-        //calcTILblue.onclick=function(){tilmap.from2D(tilmap.imSlice(2))}
-        calcTILblue.onclick = function () {
-            let dd = tilmap.imSlice(2)
-            // tilmap.from2D(dd) <-- this is the base function we are expanding here to represent extracted classifications
-            tilmap.cvBase.hidden = false
-            tilmap.img.hidden = true
-            tilmap.cv2D = dd // keeping current value 2D slice
-            var cm = jmat.colormap()
-            var k = 63 / 255 // png values are between 0-255 and cm 0-63
-            // extract classifications
-            // channel B storing 5 codes:
-            // 255:[tissue, no cancer, no til]
-            // 254:[tissue + cancer + no til]
-            // 253:[tissue + no cancer + til]
-            // 252:[tissue + cancer + til]
-            // 0:[no tissue]
-            var ddd = dd.map(function (d) {
-                return d.map(function (v) {
-                    let rgba
-                    switch (v) {
-                        case 255: // [tissue + cancer + no til]
-                            rgba = [192, 192, 192, 255]
-                            break;
-                        case 254: // [tissue + cancer + no til]
-                            rgba = [255, 255, 0, 255]
-                            break;
-                        case 253: // [tissue + no cancer + til]
-                            rgba = [255, 0, 0, 255]
-                            break;
-                        case 252: // [tissue + cancer + til]
-                            rgba = [255, 165, 0, 255]
-                            break;
-                        default:
-                            rgba = [0, 0, 0, 0] // notice transparency 
-                        //rgba = cm[Math.round(v*k)].map(x=>Math.round(x*255)).concat(255)
-                    }
-                    return rgba
-                })
-            })
-            jmat.imwrite(tilmap.cvBase, ddd)
-        }
-        calcTIL0.onclick = function () {
-            tilmap.img.hidden = false
-            tilmap.cvBase.hidden = true
-        }
+        // calcTILred.onclick = function () { tilmap.from2D(tilmap.imSlice(0)) }
+        // calcTILgreen.onclick = function () { tilmap.from2D(tilmap.imSlice(1)) }
+        // //calcTILblue.onclick=function(){tilmap.from2D(tilmap.imSlice(2))}
+        // calcTILblue.onclick = function () {
+        //     let dd = tilmap.imSlice(2)
+        //     // tilmap.from2D(dd) <-- this is the base function we are expanding here to represent extracted classifications
+        //     tilmap.cvBase.hidden = false
+        //     tilmap.img.hidden = true
+        //     tilmap.cv2D = dd // keeping current value 2D slice
+        //     var cm = jmat.colormap()
+        //     var k = 63 / 255 // png values are between 0-255 and cm 0-63
+        //     // extract classifications
+        //     // channel B storing 5 codes:
+        //     // 255:[tissue, no cancer, no til]
+        //     // 254:[tissue + cancer + no til]
+        //     // 253:[tissue + no cancer + til]
+        //     // 252:[tissue + cancer + til]
+        //     // 0:[no tissue]
+        //     var ddd = dd.map(function (d) {
+        //         return d.map(function (v) {
+        //             let rgba
+        //             switch (v) {
+        //                 case 255: // [tissue + cancer + no til]
+        //                     rgba = [192, 192, 192, 255]
+        //                     break;
+        //                 case 254: // [tissue + cancer + no til]
+        //                     rgba = [255, 255, 0, 255]
+        //                     break;
+        //                 case 253: // [tissue + no cancer + til]
+        //                     rgba = [255, 0, 0, 255]
+        //                     break;
+        //                 case 252: // [tissue + cancer + til]
+        //                     rgba = [255, 165, 0, 255]
+        //                     break;
+        //                 default:
+        //                     rgba = [0, 0, 0, 0] // notice transparency 
+        //                 //rgba = cm[Math.round(v*k)].map(x=>Math.round(x*255)).concat(255)
+        //             }
+        //             return rgba
+        //         })
+        //     })
+        //     jmat.imwrite(tilmap.cvBase, ddd)
+        // }
+        // calcTIL0.onclick = function () {
+        //     tilmap.img.hidden = false
+        //     tilmap.cvBase.hidden = true
+        // }
         //debugger
         tilmap.cvBase.onclick = tilmap.img.onclick
 
@@ -688,9 +706,9 @@ tilmap.calcTILfun = function () {
         }
 
         //cancerRange.onchange()
-        if (!document.getElementById('cvTop')) {
-            calcTILblue.click() // <-- classify first
-        }
+        // if (!document.getElementById('cvTop')) {
+        //     calcTILblue.click() // <-- classify first
+        // }
 
 
         //if(document.querySelectorAll('#cvTop').length==0){
